@@ -1,0 +1,2 @@
+sopel>=7.0,<8
+Mastodon.py>=1.5.1

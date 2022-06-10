@@ -8,7 +8,7 @@ from mastodon import Mastodon, MastodonNotFoundError
 from sopel import config, logger, plugin
 from sopel.bot import Sopel, SopelWrapper
 from sopel.trigger import Trigger
-from sopel_mastodon.structures import LimitedSizeDict, strip_tags
+from sopel_modules.mastodon.structures import LimitedSizeDict, strip_tags
 
 PLUGIN_OUTPUT_PREFIX = "[Mastodon] "
 
