@@ -6,8 +6,8 @@ Mastodon plugin for [Sopel](https://sopel.chat/) IRC bots.
 
 You must already have Sopel installed to use this method.
 ```
-git clone https://github.com/sopel-irc/sopel-github
-cd sopel-github
+git clone https://github.com/hackspace-marburg/sopel-mastodon
+cd sopel-mastodon
 pip install .
 ```
 As soon as this is some kind of release ready this should work: `pip install sopel_modules.mastodon` (but it does not right now as this is very early stage software)
@@ -48,6 +48,7 @@ Given the bot code of the toot it will try to delete the toot. Only works on too
 ``` .search .s ```
 
 If given a permalink to a toot it will show this toot in IRC and assign a bot code to it. Afterwards the bot can be used to reply to it.
+In the Mastodon UI you can get the permalink of a toot by clicking on the timestamp. If it contains `/web/` it is **not** the permalink.
 
 ## TODOs
 
