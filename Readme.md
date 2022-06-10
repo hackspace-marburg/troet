@@ -5,7 +5,6 @@
 - reply to toots which are not found via mention system
   - might involve "importing" toots based on link/id
   - link importing could become dangerous
-- Move notification channel to config
 - Check possibillity of:
   - Config/User changable delays for notification updates
   - Something I forgot?

@@ -9,14 +9,10 @@ from sopel import config, logger, plugin
 from sopel.bot import Sopel, SopelWrapper
 from sopel.trigger import Trigger
 from sopel_mastodon.structures import LimitedSizeDict, strip_tags
-import sopel_mastodon
 
 PLUGIN_OUTPUT_PREFIX = "[Mastodon] "
 
 LOGGER = logger.get_logger(__name__)
-
-# TODO: move to config file:
-NOTIFICATION_CHANNEL = "#hsmr-test"
 
 
 @plugin.require_privilege(plugin.OP)
@@ -77,6 +73,8 @@ def delete_toot(bot: SopelWrapper, trigger: Trigger):
 @plugin.interval(15)
 def check_notifications(bot: SopelWrapper):
     config: MastodonSection = bot.settings.mastodon
+    if config.notification_channel is None:
+        return
     client = config.getMastodonClient()
     messageCache = config.getReplyCache()
     notifications = client.notifications(mentions_only=True)
@@ -85,16 +83,16 @@ def check_notifications(bot: SopelWrapper):
     for status in statuses:
         key = tootEncoding(status)
         bot.say(
-            PLUGIN_OUTPUT_PREFIX + f"Account: {status['account']['acct']}",
-            NOTIFICATION_CHANNEL,
+            PLUGIN_OUTPUT_PREFIX + f"Mentioned by: {status['account']['acct']}",
+            config.notification_channel,
         )
         bot.say(
             PLUGIN_OUTPUT_PREFIX + f"{strip_tags(status['content'])}",
-            NOTIFICATION_CHANNEL,
+            config.notification_channel,
         )
         bot.say(
-            PLUGIN_OUTPUT_PREFIX + f"Mention: [{key}] {status['url']}",
-            NOTIFICATION_CHANNEL,
+            PLUGIN_OUTPUT_PREFIX + f"[{key}] {status['url']}",
+            config.notification_channel,
         )
         messageCache[key] = status
     client.notifications_clear()
@@ -183,6 +181,7 @@ class MastodonSection(config.types.StaticSection):
     messageCacheLimit = config.types.ValidatedAttribute(
         "messageCacheLimit", int, default=50
     )
+    notification_channel = config.types.ValidatedAttribute("notification_channel", str)
 
     mastodonClient: Mastodon
     messageCache: LimitedSizeDict
@@ -190,6 +189,8 @@ class MastodonSection(config.types.StaticSection):
     def initMastodon(self) -> None:
         self.mastodonClient = Mastodon(self.id, self.secret, self.token, self.base_url)
         self.messageCache = LimitedSizeDict(size_limit=self.messageCacheLimit)
+        nc: str = self.notification_channel
+        self.notification_channel = nc.strip('"')
 
     def getMastodonClient(self) -> Mastodon:
         return self.mastodonClient
