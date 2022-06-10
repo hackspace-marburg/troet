@@ -1,6 +1,6 @@
 import os
 import sys
-from distutils.core import setup, find_packages
+from setuptools import setup, find_packages
 
 
 if __name__ == '__main__':
@@ -15,9 +15,6 @@ with open('README.md') as readme_file:
 
 with open('requirements.txt') as requirements_file:
     requirements = [req for req in requirements_file.readlines()]
-
-
-setup(name='sopel_mastodon', version='0.0.1', packages=['sopel_mastodon'])
 
 setup(
     name='sopel_modules.mastodon',

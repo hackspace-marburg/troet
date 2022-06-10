@@ -1,9 +1,20 @@
 # Sopel Mastodon
+
 Mastodon plugin for [Sopel](https://sopel.chat/) IRC bots.
 
 ## Installation
 
+You must already have Sopel installed to use this method.
+```
+git clone https://github.com/sopel-irc/sopel-github
+cd sopel-github
+pip install .
+```
+As soon as this is some kind of release ready this should work: `pip install sopel_modules.mastodon` (but it does not right now)
+
+
 ## TODOs
+
 - write proper Readme.md
 - reply to toots which are not found via mention system
   - might involve "importing" toots based on link/id
