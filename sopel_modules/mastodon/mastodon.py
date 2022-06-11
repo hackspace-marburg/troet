@@ -56,7 +56,7 @@ def delete_toot(bot: SopelWrapper, trigger: Trigger):
     key = trigger.args[1].split(" ", 1)[1]
     config: MastodonSection = bot.settings.mastodon
     client = config.getMastodonClient()
-    messageCache = config.getReplyCache()
+    messageCache = config.getMessageCache()
     if key not in messageCache:
         bot.say(PLUGIN_OUTPUT_PREFIX + f"Unknown reference: {key}")
         return
@@ -76,11 +76,34 @@ def search(bot: SopelWrapper, trigger: Trigger):
     client = config.getMastodonClient()
     query = trigger.args[1].split(" ", 1)[1]
     result = client.search_v2(query)
-    if not result['statuses']:
+    if not result["statuses"]:
         bot.say(PLUGIN_OUTPUT_PREFIX + "No status found. Did you use a permalink?")
         return
-    status = result['statuses'][0]
+    status = result["statuses"][0]
     print_toot(status, bot, trigger.sender)
+
+
+@plugin.command("fav")
+@plugin.require_chanmsg("Only available in Channel")
+def fav(bot: SopelWrapper, trigger: Trigger):
+    key = trigger.args[1].split(" ", 1)[1]
+    config: MastodonSection = bot.settings.mastodon
+    client = config.getMastodonClient()
+    messageCache = config.getMessageCache()
+    if key not in messageCache:
+        bot.say(PLUGIN_OUTPUT_PREFIX + f"Unknown reference: {key}")
+        return
+    if not messageCache[key]["favourited"]:
+        toot = client.status_favourite(messageCache[key]["id"])
+        bot.say(
+            PLUGIN_OUTPUT_PREFIX + f"Favourited: [{key}] {messageCache[key]['url']}"
+        )
+    else:
+        toot = client.status_unfavourite(messageCache[key]["id"])
+        bot.say(
+            PLUGIN_OUTPUT_PREFIX + f"Unfavourited: [{key}] {messageCache[key]['url']}"
+        )
+    messageCache[key] = toot
 
 
 @plugin.interval(30)
@@ -101,27 +124,35 @@ def check_notifications(bot: Sopel):
         print_toot(status, bot, config.notification_channel)
 
     # if there were notifications clear them
-    if notifications: 
+    if notifications:
         client.notifications_clear()
+
 
 def print_toot(status, bot, recipient):
     """Outputs a full status to IRC and adds it to the messageCache"""
     config: MastodonSection = bot.settings.mastodon
-    messageCache = config.getReplyCache()
+    messageCache = config.getMessageCache()
     key = tootEncoding(status)
     bot.say(
-        PLUGIN_OUTPUT_PREFIX + f"By: {status['account']['acct']} At: {status['created_at']}",
+        PLUGIN_OUTPUT_PREFIX
+        + f"By: {status['account']['acct']} At: {status['created_at']}",
         recipient,
-    )   
+    )
     bot.say(
         PLUGIN_OUTPUT_PREFIX + f"{strip_tags(status['content'])}",
         recipient,
     )
+    # For all images attached to the toot provide a link
+    # These links are long. Maybe shorten in the future?
+    # Observation: Media links of restricted toots are NOT restricted. So this always works.
+    for media in status["media_attachments"]:
+        bot.say(PLUGIN_OUTPUT_PREFIX + "Media: " + media["url"])
     bot.say(
         PLUGIN_OUTPUT_PREFIX + f"[{key}] {status['url']}",
         recipient,
     )
     messageCache[key] = status
+
 
 def toot(
     bot: Sopel | SopelWrapper,
@@ -134,7 +165,7 @@ def toot(
     """
     config: MastodonSection = bot.settings.mastodon
     client = config.getMastodonClient()
-    messageCache = config.getReplyCache()
+    messageCache = config.getMessageCache()
     if reply is None:
         LOGGER.info(f"Tooting: {post}")
         result = client.status_post(post, sensitive=sensitive)
@@ -177,6 +208,7 @@ def setup(bot: Sopel):
         )
     section.initMastodon()
     # TODO: verify credentials?
+    # But: section.getMastodonClient().app_verify_credentials() does not seem to work for this.
 
 
 def configure(config: config.Config):
@@ -219,5 +251,5 @@ class MastodonSection(config.types.StaticSection):
     def getMastodonClient(self) -> Mastodon:
         return self.mastodonClient
 
-    def getReplyCache(self) -> LimitedSizeDict:
+    def getMessageCache(self) -> LimitedSizeDict:
         return self.messageCache
