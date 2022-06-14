@@ -24,7 +24,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Felix Pape',
     author_email='ziemlich@schlechte.info',
-    url='https://github.com/hackspace-marburg/sopel-mastodon/',
+    url='https://github.com/hackspace-marburg/troet/',
     packages=find_packages('.'),
     namespace_packages=['sopel_modules'],
     include_package_data=True,
