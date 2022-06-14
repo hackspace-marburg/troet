@@ -6,7 +6,7 @@ Mastodon plugin for [Sopel](https://sopel.chat/) IRC bots.
 
 You must already have Sopel installed to use this method.
 ```
-git clone https://github.com/hackspace-marburg/sopel-mastodon
+git clone https://github.com/hackspace-marburg/troet
 cd sopel-mastodon
 pip install .
 ```
