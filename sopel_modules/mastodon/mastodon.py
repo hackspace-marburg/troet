@@ -8,12 +8,11 @@ from sopel_modules.mastodon.structures import LimitedSizeDict, strip_tags
 
 from mastodon import Mastodon, MastodonNotFoundError
 
-PLUGIN_OUTPUT_PREFIX = "[Mastodon] "
+PLUGIN_OUTPUT_PREFIX = "[troooet] "
 
 LOGGER = get_logger(__name__)
 
 
-@plugin.require_privilege(plugin.OP)
 @plugin.require_chanmsg("Only available in Channel")
 @plugin.command("toot", "t")
 def normal_toot(bot: SopelWrapper, trigger: Trigger):
@@ -31,7 +30,6 @@ def anon_toot(bot: SopelWrapper, trigger: Trigger):
     toot(bot, message, True)
 
 
-@plugin.require_privilege(plugin.OP)
 @plugin.require_chanmsg("Only available in Channel")
 @plugin.command("reply", "r")
 def reply_toot(bot: SopelWrapper, trigger: Trigger):
@@ -68,7 +66,6 @@ def delete_toot(bot: SopelWrapper, trigger: Trigger):
         bot.say(PLUGIN_OUTPUT_PREFIX + f"[{key}] cannot be deleted")
 
 
-@plugin.require_privilege(plugin.OP)
 @plugin.require_chanmsg("Only available in Channel")
 @plugin.command("search", "s")
 def search(bot: SopelWrapper, trigger: Trigger):
