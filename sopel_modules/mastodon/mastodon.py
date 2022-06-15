@@ -125,7 +125,7 @@ def check_notifications(bot: Sopel):
         client.notifications_clear()
 
 
-def print_toot(status, bot, recipient):
+def print_toot(status, bot : Sopel, recipient):
     """Outputs a full status to IRC and adds it to the messageCache"""
     config: MastodonSection = bot.settings.mastodon
     messageCache = config.getMessageCache()
@@ -143,7 +143,10 @@ def print_toot(status, bot, recipient):
     # These links are long. Maybe shorten in the future?
     # Observation: Media links of restricted toots are NOT restricted. So this always works.
     for media in status["media_attachments"]:
-        bot.say(PLUGIN_OUTPUT_PREFIX + "Media: " + media["url"])
+        bot.say(
+            PLUGIN_OUTPUT_PREFIX + "Media: " + media["url"],
+            recipient
+        )
     bot.say(
         PLUGIN_OUTPUT_PREFIX + f"[{key}] {status['url']}",
         recipient,
@@ -152,13 +155,13 @@ def print_toot(status, bot, recipient):
 
 
 def toot(
-    bot: Sopel | SopelWrapper,
+    bot: SopelWrapper,
     post: str,
     sensitive: bool = False,
-    reply: str | None = None,
+    reply: str = None,
 ):
     """Helper function to send/reply to a toot.\\
-    Needs the Sopel or SopelWrapper object as bot since the Mastodon client is instanced in the bot settings
+    Needs the SopelWrapper object as bot since the Mastodon client is instanced in the bot settings
     """
     config: MastodonSection = bot.settings.mastodon
     client = config.getMastodonClient()
