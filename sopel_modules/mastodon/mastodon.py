@@ -125,7 +125,7 @@ def check_notifications(bot: Sopel):
         client.notifications_clear()
 
 
-def print_toot(status, bot : Sopel, recipient):
+def print_toot(status, bot: Sopel, recipient):
     """Outputs a full status to IRC and adds it to the messageCache"""
     config: MastodonSection = bot.settings.mastodon
     messageCache = config.getMessageCache()
@@ -143,10 +143,7 @@ def print_toot(status, bot : Sopel, recipient):
     # These links are long. Maybe shorten in the future?
     # Observation: Media links of restricted toots are NOT restricted. So this always works.
     for media in status["media_attachments"]:
-        bot.say(
-            PLUGIN_OUTPUT_PREFIX + "Media: " + media["url"],
-            recipient
-        )
+        bot.say(PLUGIN_OUTPUT_PREFIX + "Media: " + media["url"], recipient)
     bot.say(
         PLUGIN_OUTPUT_PREFIX + f"[{key}] {status['url']}",
         recipient,
@@ -206,7 +203,7 @@ def setup(bot: Sopel):
         LOGGER.error(
             "Mastodon plugin is missing necessary config values. Plugin will not work"
         )
-    section.initMastodon()
+    section.initMastodon(bot)
     # TODO: verify credentials?
     # But: section.getMastodonClient().app_verify_credentials() does not seem to work for this.
 
@@ -242,9 +239,11 @@ class MastodonSection(config.types.StaticSection):
     mastodonClient: Mastodon
     messageCache: LimitedSizeDict
 
-    def initMastodon(self) -> None:
+    def initMastodon(self, bot) -> None:
         self.mastodonClient = Mastodon(self.id, self.secret, self.token, self.base_url)
-        self.messageCache = LimitedSizeDict(size_limit=self.messageCacheLimit)
+        self.messageCache = LimitedSizeDict(
+            size_limit=self.messageCacheLimit, botDB=bot.db, client=self.mastodonClient
+        )
         nc: str = self.notification_channel
         self.notification_channel = nc.strip('"')
 

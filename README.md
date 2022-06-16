@@ -67,20 +67,11 @@ In the Mastodon UI you can get the permalink of a toot by clicking on the timest
 ## TODOs
 
 - write proper Readme.md
-- Handle long messages
-  - Maxlength Mastodon: 500 *characters* (utf-8)
-  - Might not be necessary (?)
-    - [RFC1459](https://www.ietf.org/rfc/rfc1459.txt) states 512 characters (rather: *bytes*) maximum command length in IRC.
-    - This is reduced by: CR/LF (2 bytes), PRIVMSG Command (~ 10 bytes), Channel name (2-201 bytes)
-    - Username *seems* to affect this (good, since usernames are appended to the toot, but I dont understand why)
-      - Probably related to routing through hackint network due to [shenanigans](https://news.ycombinator.com/item?id=7991699)
-    - Bytes vs UTF-8: Probably modern utf-8 shenanigans reduce this as well
-  - Let's hope noone touches this due to backward compatability in IRCv3.3
-  - Fun fact: IRCv3.1+ Message tags can be far bigger (8kB) but we don´t care about those.
-- Move messageCache to Database (i.e. make persistent)
-- Clarify with "Team"
-  - How should Notifications be displayed?
-  - Which users should have toot/anonymous/delete-permission?
 - At the moment this code painfully ignores any kind of ratelimiting
-  - Should not be a problem for expected use. 
+  - If the size of the messageCache is too big (i.e.: close to 300) this could be a problem while starting the bot
+    - Toots need to be reloaded due to message structure cannot be json serialized easily (because of datetime types)
+- Add Feature for sharing toots (Twitter "retweet" equivalent)
+- More flexibility of the ` .search ` command
+  - Try to convert non-permalinks into permalinks?
+  - This might be messy/unsave.
 - Unittests
