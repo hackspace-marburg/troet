@@ -24,6 +24,16 @@ def normal_toot(bot: SopelWrapper, trigger: Trigger):
 
 @plugin.require_privilege(plugin.OP)
 @plugin.require_chanmsg("Only available in Channel")
+@plugin.command("listedtoot", "lt")
+def normal_toot(bot: SopelWrapper, trigger: Trigger):
+    message = trigger.args[1].split(" ", 1)[1]
+    author = trigger.nick
+    post = message + "\n~" + author
+    toot(bot, post, visibility='public')
+
+
+@plugin.require_privilege(plugin.OP)
+@plugin.require_chanmsg("Only available in Channel")
 @plugin.command("tootanon", "ta")
 def anon_toot(bot: SopelWrapper, trigger: Trigger):
     message = trigger.args[1].split(" ", 1)[1]
@@ -156,6 +166,7 @@ def toot(
     post: str,
     sensitive: bool = False,
     reply: str = None,
+    visibility: str = 'unlisted',
 ):
     """Helper function to send/reply to a toot.\\
     Needs the SopelWrapper object as bot since the Mastodon client is instanced in the bot settings
@@ -172,7 +183,7 @@ def toot(
             return
         previous = messageCache[reply]
         LOGGER.info(f"Replying: {post} to: {previous['id']}")
-        result = client.status_reply(previous, status=post, sensitive=sensitive)
+        result = client.status_reply(previous, status=post, sensitive=sensitive, visibility=visibility)
     LOGGER.debug(f"Toot Result: {result}")
     key = tootEncoding(result)
     messageCache[key] = result
