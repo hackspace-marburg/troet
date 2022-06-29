@@ -176,7 +176,7 @@ def toot(
     messageCache = config.getMessageCache()
     if reply is None:
         LOGGER.info(f"Tooting: {post}")
-        result = client.status_post(post, sensitive=sensitive)
+        result = client.status_post(post, sensitive=sensitive, visibility=visibility)
     else:
         if reply not in messageCache:
             bot.say(PLUGIN_OUTPUT_PREFIX + f"Unknown reference to reply to: {reply}")
