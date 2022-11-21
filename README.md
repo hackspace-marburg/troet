@@ -10,7 +10,6 @@ git clone https://github.com/hackspace-marburg/troet
 cd sopel-mastodon
 pip install .
 ```
-As soon as this is some kind of release ready this should work: `pip install sopel_modules.mastodon` (but it does not right now as this is very early stage software)
 
 ## Setup
 
@@ -29,7 +28,7 @@ notification_channel = "#hsmr" # IRC channel where the Bot should put notificati
 This is not a general purpose Mastodon client. The intention was to make interaction between an IRC Channel and Mastodon possible to:
 
 - Toot
-- Be notified and reply to mentions
+- Be notified and reply to mentions (only available if `notification_channel` is set. Otherwise no notifications will occur)
 - Delete things others tooted earlier
 - Reply to specific toots (complicated, but also rarest intended use case)
 
@@ -64,14 +63,20 @@ Given the bot code of the toot it will try to delete the toot. Only works on too
 If given a permalink to a toot it will show this toot in IRC and assign a bot code to it. Afterwards the bot can be used to reply to it.
 In the Mastodon UI you can get the permalink of a toot by clicking on the timestamp. If it contains `/web/` it is **not** the permalink.
 
+``` .listedtoot .lt ```
+
+To prevent potential spam from the bot to be visible on the Mastodon instances public timeline all normal toots and replies are sent with visibility set to unlisted.
+This command is the exception to this rule. This will act as `.toot` does.
+
+``` .mute .m```
+
+Given a permalink or a bot code of a toot this will mute notifications originating from the given toot.
+
 ## TODOs
 
 - write proper Readme.md
 - At the moment this code painfully ignores any kind of ratelimiting
   - If the size of the messageCache is too big (i.e.: close to 300) this could be a problem while starting the bot
-    - Toots need to be reloaded due to message structure cannot be json serialized easily (because of datetime types)
+    - Toots need to be reloaded due to message structure cannot be json serialized easily (because of datetime types) (i.e. I am lazy and should work on a workaround)
 - Add Feature for sharing toots (Twitter "retweet" equivalent)
-- More flexibility of the ` .search ` command
-  - Try to convert non-permalinks into permalinks?
-  - This might be messy/unsave.
-- Unittests
+
