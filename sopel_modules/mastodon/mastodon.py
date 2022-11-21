@@ -95,7 +95,6 @@ def search(bot: SopelWrapper, trigger: Trigger):
 def mute(bot: SopelWrapper, trigger: Trigger):
     config: MastodonSection = bot.settings.mastodon
     client = config.getMastodonClient()
-    client.status_mute()
     parameter = trigger.args[1].split(" ", 1)[1]
     messageCache = config.getMessageCache()
     key: str
@@ -110,7 +109,7 @@ def mute(bot: SopelWrapper, trigger: Trigger):
         toot = result["statuses"][0]
         key = tootEncoding(toot)
         messageCache[key] = toot
-    status = client.status_mute(toot["id"])
+    status = client.status_mute(toot)
     if not status:
         bot.say(
             PLUGIN_OUTPUT_PREFIX + f"[{key}] No reply on request to mute. Possible bug."
