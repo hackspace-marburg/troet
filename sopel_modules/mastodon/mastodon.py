@@ -29,7 +29,7 @@ def normal_toot(bot: SopelWrapper, trigger: Trigger):
     message = trigger.args[1].split(" ", 1)[1]
     author = trigger.nick
     post = message + "\n~" + author
-    toot(bot, post, visibility='public')
+    toot(bot, post, visibility="public")
 
 
 @plugin.require_privilege(plugin.OP)
@@ -88,6 +88,38 @@ def search(bot: SopelWrapper, trigger: Trigger):
         return
     status = result["statuses"][0]
     print_toot(status, bot, trigger.sender)
+
+
+@plugin.require_chanmsg("Only available in Channel")
+@plugin.command("mute", "m")
+def mute(bot: SopelWrapper, trigger: Trigger):
+    config: MastodonSection = bot.settings.mastodon
+    client = config.getMastodonClient()
+    client.status_mute()
+    parameter = trigger.args[1].split(" ", 1)[1]
+    messageCache = config.getMessageCache()
+    key: str
+    if parameter in messageCache:
+        key = parameter
+        toot = messageCache[key]
+    else:
+        result = client.search_v2(parameter)
+        if not result["statuses"]:
+            bot.say(PLUGIN_OUTPUT_PREFIX + "No status found. Nothing muted.")
+            return
+        toot = result["statuses"][0]
+        key = tootEncoding(toot)
+        messageCache[key] = toot
+    status = client.status_mute(toot["id"])
+    if not status:
+        bot.say(
+            PLUGIN_OUTPUT_PREFIX + f"[{key}] No reply on request to mute. Possible bug."
+        )
+        return
+    if status["muted"]:
+        bot.say(PLUGIN_OUTPUT_PREFIX + f"[{key}] Muted.")
+    else:
+        bot.say(PLUGIN_OUTPUT_PREFIX + f"[{key}] Failed to mute.")
 
 
 @plugin.command("fav")
@@ -166,7 +198,7 @@ def toot(
     post: str,
     sensitive: bool = False,
     reply: str = None,
-    visibility: str = 'unlisted',
+    visibility: str = "unlisted",
 ):
     """Helper function to send/reply to a toot.\\
     Needs the SopelWrapper object as bot since the Mastodon client is instanced in the bot settings
@@ -183,7 +215,9 @@ def toot(
             return
         previous = messageCache[reply]
         LOGGER.info(f"Replying: {post} to: {previous['id']}")
-        result = client.status_reply(previous, status=post, sensitive=sensitive, visibility=visibility)
+        result = client.status_reply(
+            previous, status=post, sensitive=sensitive, visibility=visibility
+        )
     LOGGER.debug(f"Toot Result: {result}")
     key = tootEncoding(result)
     messageCache[key] = result
