@@ -2,9 +2,12 @@ from collections import OrderedDict
 from io import StringIO
 from html.parser import HTMLParser
 from mastodon import Mastodon
+from mastodon.errors import MastodonAPIError
 
+from sopel.tools import get_logger
 from sopel.db import SopelDB
 
+LOGGER = get_logger(__name__)
 
 class LimitedSizeDict(OrderedDict):
     """Dictionary with limited Size which also saves it's status in
@@ -20,14 +23,20 @@ class LimitedSizeDict(OrderedDict):
         OrderedDict.__init__(self, *args, **kwds)
         # Check of keys are present in Database.
         keys = self.db.get_plugin_value(self.plugin_name, self.keylistkey)
-        print(f"Got Keys from DB: {keys}")
+        #LOGGER.info(f"Got Keys from DB: {keys}")
         if keys is not None:
             for key in keys:
                 # Load Messages from old keys back into new dict
                 value = self.db.get_plugin_value(self.plugin_name, key)
-                result = client.search_v2(value)
-                if result["statuses"]:
-                    OrderedDict.__setitem__(self, key, result["statuses"][0])
+                try:
+                    result = client.search_v2(value)
+                    if result["statuses"]:
+                        OrderedDict.__setitem__(self, key, result["statuses"][0])
+                except MastodonAPIError as APIError:
+                    LOGGER.warn(
+                        f"API didn't like {key} - {value} - {APIError}"
+                    )
+
             # Updates dict in case more keys were loaded
             # or old keys could not be loaded from mastodon
             self._check_size_limit()
