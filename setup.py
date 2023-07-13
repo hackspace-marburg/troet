@@ -17,7 +17,7 @@ with open('requirements.txt') as requirements_file:
     requirements = [req for req in requirements_file.readlines()]
 
 setup(
-    name='sopel_modules.mastodon',
+    name='sopel_modules.troet',
     version='0.0.1',
     description='Mastodon plugin for Sopel',
     long_description=readme,
