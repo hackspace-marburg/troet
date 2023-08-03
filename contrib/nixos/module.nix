@@ -96,7 +96,7 @@ let
       secret = ${cfg.mastodon.secret}
       token = ${cfg.mastodon.token}
       base_url = ${cfg.mastodon.baseUrl}
-      notification_channel = ${cfg.mastodon.notificationChannel} 
+      notification_channel = ${toString cfg.mastodon.notificationChannel}
     '';
 
     cfg = config.services.troet;
@@ -151,7 +151,8 @@ in {
     };
 
     mastodon.notificationChannel = mkOption {
-      type = types.str;
+      default = null;
+      type = types.nullOr types.str;
     };
 
   };
