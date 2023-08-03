@@ -148,14 +148,14 @@ def delete_toot(bot: SopelWrapper, trigger: Trigger):
     client = config.getMastodonClient()
     messageCache = config.getMessageCache()
     if key not in messageCache:
-        bot.say(PLUGIN_OUTPUT_PREFIX + f"Unknown reference: {key}")
+        bot.notice(PLUGIN_OUTPUT_PREFIX + f"Unknown reference: {key}")
         return
     try:
         client.status_delete(messageCache[key]["id"])
         del messageCache[key]
-        bot.say(PLUGIN_OUTPUT_PREFIX + f"Deleted: {key}")
+        bot.notice(PLUGIN_OUTPUT_PREFIX + f"Deleted: {key}")
     except MastodonNotFoundError:
-        bot.say(PLUGIN_OUTPUT_PREFIX + f"[{key}] cannot be deleted")
+        bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] cannot be deleted")
 
 
 @plugin.require_chanmsg("Only available in Channel")
@@ -166,7 +166,7 @@ def search(bot: SopelWrapper, trigger: Trigger):
     query = trigger.args[1].split(" ", 1)[1]
     result = client.search_v2(query)
     if not result["statuses"]:
-        bot.say(PLUGIN_OUTPUT_PREFIX + "No status found. Did you use a permalink?")
+        bot.notice(PLUGIN_OUTPUT_PREFIX + "No status found. Did you use a permalink?")
         return
     status = result["statuses"][0]
     print_toot(status, bot, trigger.sender)
@@ -186,21 +186,21 @@ def mute(bot: SopelWrapper, trigger: Trigger):
     else:
         result = client.search_v2(parameter)
         if not result["statuses"]:
-            bot.say(PLUGIN_OUTPUT_PREFIX + "No status found. Nothing muted.")
+            bot.notice(PLUGIN_OUTPUT_PREFIX + "No status found. Nothing muted.")
             return
         toot = result["statuses"][0]
         key = tootEncoding(toot)
         messageCache[key] = toot
     status = client.status_mute(toot)
     if not status:
-        bot.say(
+        bot.notice(
             PLUGIN_OUTPUT_PREFIX + f"[{key}] No reply on request to mute. Possible bug."
         )
         return
     if status["muted"]:
-        bot.say(PLUGIN_OUTPUT_PREFIX + f"[{key}] Muted.")
+        bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] Muted.")
     else:
-        bot.say(PLUGIN_OUTPUT_PREFIX + f"[{key}] Failed to mute.")
+        bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] Failed to mute.")
 
 
 @plugin.command("fav")
@@ -211,16 +211,16 @@ def fav(bot: SopelWrapper, trigger: Trigger):
     client = config.getMastodonClient()
     messageCache = config.getMessageCache()
     if key not in messageCache:
-        bot.say(PLUGIN_OUTPUT_PREFIX + f"Unknown reference: {key}")
+        bot.notice(PLUGIN_OUTPUT_PREFIX + f"Unknown reference: {key}")
         return
     if not messageCache[key]["favourited"]:
         toot = client.status_favourite(messageCache[key]["id"])
-        bot.say(
+        bot.notice(
             PLUGIN_OUTPUT_PREFIX + f"Favourited: [{key}] {messageCache[key]['url']}"
         )
     else:
         toot = client.status_unfavourite(messageCache[key]["id"])
-        bot.say(
+        bot.notice(
             PLUGIN_OUTPUT_PREFIX + f"Unfavourited: [{key}] {messageCache[key]['url']}"
         )
     messageCache[key] = toot
@@ -253,12 +253,12 @@ def print_toot(status, bot: Sopel, recipient):
     config: MastodonSection = bot.settings.mastodon
     messageCache = config.getMessageCache()
     key = tootEncoding(status)
-    bot.say(
+    bot.notice(
         PLUGIN_OUTPUT_PREFIX
         + f"By: {status['account']['acct']} At: {status['created_at']}",
         recipient,
     )
-    bot.say(
+    bot.notice(
         PLUGIN_OUTPUT_PREFIX + f"{strip_tags(status['content'])}",
         recipient,
     )
@@ -266,8 +266,8 @@ def print_toot(status, bot: Sopel, recipient):
     # These links are long. Maybe shorten in the future?
     # Observation: Media links of restricted toots are NOT restricted. So this always works.
     for media in status["media_attachments"]:
-        bot.say(PLUGIN_OUTPUT_PREFIX + "Media: " + media["url"], recipient)
-    bot.say(
+        bot.notice(PLUGIN_OUTPUT_PREFIX + "Media: " + media["url"], recipient)
+    bot.notice(
         PLUGIN_OUTPUT_PREFIX + f"[{key}] {status['url']}",
         recipient,
     )
@@ -292,7 +292,7 @@ def toot(
         result = client.status_post(post, sensitive=sensitive, visibility=visibility)
     else:
         if reply not in messageCache:
-            bot.say(PLUGIN_OUTPUT_PREFIX + f"Unknown reference to reply to: {reply}")
+            bot.notice(PLUGIN_OUTPUT_PREFIX + f"Unknown reference to reply to: {reply}")
             return
         previous = messageCache[reply]
         LOGGER.info(f"Replying: {post} to: {previous['id']}")
@@ -302,7 +302,7 @@ def toot(
     LOGGER.debug(f"Toot Result: {result}")
     key = tootEncoding(result)
     messageCache[key] = result
-    bot.say(PLUGIN_OUTPUT_PREFIX + f"[{key}] {result['url']}")
+    bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] {result['url']}")
 
 
 def tootEncoding(toot):
