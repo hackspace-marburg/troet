@@ -20,6 +20,7 @@ PLUGIN_OUTPUT_PREFIX = "[troooet] "
 
 LOGGER = get_logger(__name__)
 
+
 class LimitedSizeDict(OrderedDict):
     """Dictionary with limited Size which also saves it's status in
     the SopelDB for persistency across restarts"""
@@ -34,7 +35,7 @@ class LimitedSizeDict(OrderedDict):
         OrderedDict.__init__(self, *args, **kwds)
         # Check of keys are present in Database.
         keys = self.db.get_plugin_value(self.plugin_name, self.keylistkey)
-        #LOGGER.info(f"Got Keys from DB: {keys}")
+        # LOGGER.info(f"Got Keys from DB: {keys}")
         if keys is not None:
             for key in keys:
                 # Load Messages from old keys back into new dict
@@ -44,9 +45,7 @@ class LimitedSizeDict(OrderedDict):
                     if result["statuses"]:
                         OrderedDict.__setitem__(self, key, result["statuses"][0])
                 except MastodonAPIError as APIError:
-                    LOGGER.warn(
-                        f"API didn't like {key} - {value} - {APIError}"
-                    )
+                    LOGGER.warn(f"API didn't like {key} - {value} - {APIError}")
 
             # Updates dict in case more keys were loaded
             # or old keys could not be loaded from mastodon
@@ -195,9 +194,7 @@ def mute(bot: SopelWrapper, trigger: Trigger):
         messageCache[key] = toot
     status = client.status_mute(toot)
     if not status:
-        bot.notice(
-            PLUGIN_OUTPUT_PREFIX + f"[{key}] No reply on request to mute." 
-        )
+        bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] No reply on request to mute.")
         return
     if status["muted"]:
         bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] Muted.")
@@ -227,6 +224,7 @@ def fav(bot: SopelWrapper, trigger: Trigger):
         )
     messageCache[key] = toot
 
+
 @plugin.command("cancel")
 @plugin.require_chanmsg("Only available in Channel")
 @plugin.require_privilege(plugin.OP)
@@ -236,7 +234,9 @@ def cancel(bot: SopelWrapper, trigger: Trigger):
         [x.set() for x in config.delayed_toots]
         bot.notice(PLUGIN_OUTPUT_PREFIX + "Canceled all floating toots")
     else:
-        bot.notice(PLUGIN_OUTPUT_PREFIX + "Delayed tooting not enabled. This does nothing.")
+        bot.notice(
+            PLUGIN_OUTPUT_PREFIX + "Delayed tooting not enabled. This does nothing."
+        )
 
 
 @plugin.interval(30)
@@ -310,15 +310,20 @@ def toot(
 
     def post_status(**kwargs):
         if config.delayed_tooting == True:
-            bot.notice(PLUGIN_OUTPUT_PREFIX + f"Toot Delayed. Cancel all unposted toots with .cancel")
+            bot.notice(
+                PLUGIN_OUTPUT_PREFIX
+                + f"Toot Delayed. Cancel all unposted toots with .cancel"
+            )
             evt = Event()
             config.delayed_toots.append(evt)
-            def post_eventually(event : Event):
+
+            def post_eventually(event: Event):
                 sleep(config.delay)
                 if not event.is_set():
                     send_toot(**kwargs)
                 config.delayed_toots.remove(event)
-            thread = Thread(target=post_eventually,args=(evt,))
+
+            thread = Thread(target=post_eventually, args=(evt,))
             thread.run()
         else:
             send_toot(**kwargs)
@@ -333,7 +338,10 @@ def toot(
         previous = messageCache[reply]
         LOGGER.info(f"Replying: {post} to: {previous['id']}")
         post_status(
-            in_reply_to_id=previous, status=post, sensitive=sensitive, visibility=visibility
+            in_reply_to_id=previous,
+            status=post,
+            sensitive=sensitive,
+            visibility=visibility,
         )
 
 
@@ -395,7 +403,7 @@ class MastodonSection(config.types.StaticSection):
     notification_channel = config.types.ValidatedAttribute("notification_channel", str)
     delayed_tooting = config.types.ValidatedAttribute("delayed", bool, default=False)
     delay = config.types.ValidatedAttribute("delay", int, default=360)
-    delayed_toots : list[Event] = list()
+    delayed_toots: list[Event] = list()
 
     mastodonClient: Mastodon
     messageCache: LimitedSizeDict
