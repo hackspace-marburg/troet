@@ -21,6 +21,9 @@ secret = # Mastodon client secret
 token = # Mastodon access token
 base_url = https://chaos.social # Base URL of the Mastodon instance of the bot account
 notification_channel = "#hsmr" # IRC channel where the Bot should put notifications. Optional
+delayed = false # Optional: Only post toots after a set delay. Default: false
+delay = 360 # Optional: Delay (in seconds) until toots are posted if delayed mode (set above) is used. Default: 360
+
 ```
 
 ## Limitations
@@ -68,9 +71,13 @@ In the Mastodon UI you can get the permalink of a toot by clicking on the timest
 To prevent potential spam from the bot to be visible on the Mastodon instances public timeline all normal toots and replies are sent with visibility set to unlisted.
 This command is the exception to this rule. This will act as `.toot` does.
 
-``` .mute .m```
+``` .mute .m ```
 
 Given a permalink or a bot code of a toot this will mute notifications originating from the given toot.
+
+``` .cancel ```
+
+Stops all currently requsted but unposted toots (used in delayed mode)
 
 ## TODOs
 

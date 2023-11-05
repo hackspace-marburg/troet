@@ -232,8 +232,12 @@ def fav(bot: SopelWrapper, trigger: Trigger):
 @plugin.require_privilege(plugin.OP)
 def cancel(bot: SopelWrapper, trigger: Trigger):
     config: MastodonSection = bot.settings.mastodon
-    [x.set() for x in config.delayed_toots]
-    bot.notice(PLUGIN_OUTPUT_PREFIX + f"Canceled all floating toots")
+    if config.delayed_tooting == True:
+        [x.set() for x in config.delayed_toots]
+        bot.notice(PLUGIN_OUTPUT_PREFIX + "Canceled all floating toots")
+    else:
+        bot.notice(PLUGIN_OUTPUT_PREFIX + "Delayed tooting not enabled. This does nothing.")
+
 
 @plugin.interval(30)
 def check_notifications(bot: Sopel):
