@@ -1,4 +1,5 @@
 from base64 import b64encode
+from time import sleep
 
 from sopel import config, plugin
 from sopel.bot import Sopel, SopelWrapper
@@ -12,7 +13,8 @@ from html.parser import HTMLParser
 from sopel.tools import get_logger
 from sopel.db import SopelDB
 
-from mastodon import Mastodon, MastodonNotFoundError
+from threading import Thread, Event
+from mastodon import Mastodon, MastodonNotFoundError, MastodonAPIError
 
 PLUGIN_OUTPUT_PREFIX = "[troooet] "
 
@@ -107,7 +109,7 @@ def normal_toot(bot: SopelWrapper, trigger: Trigger):
 @plugin.require_privilege(plugin.OP)
 @plugin.require_chanmsg("Only available in Channel")
 @plugin.command("listedtoot", "lt")
-def normal_toot(bot: SopelWrapper, trigger: Trigger):
+def listed_toot(bot: SopelWrapper, trigger: Trigger):
     message = trigger.args[1].split(" ", 1)[1]
     author = trigger.nick
     post = message + "\n~" + author
@@ -194,7 +196,7 @@ def mute(bot: SopelWrapper, trigger: Trigger):
     status = client.status_mute(toot)
     if not status:
         bot.notice(
-            PLUGIN_OUTPUT_PREFIX + f"[{key}] No reply on request to mute. Possible bug."
+            PLUGIN_OUTPUT_PREFIX + f"[{key}] No reply on request to mute." 
         )
         return
     if status["muted"]:
@@ -225,6 +227,13 @@ def fav(bot: SopelWrapper, trigger: Trigger):
         )
     messageCache[key] = toot
 
+@plugin.command("cancel")
+@plugin.require_chanmsg("Only available in Channel")
+@plugin.require_privilege(plugin.OP)
+def cancel(bot: SopelWrapper, trigger: Trigger):
+    config: MastodonSection = bot.settings.mastodon
+    [x.set() for x in config.delayed_toots]
+    bot.notice(PLUGIN_OUTPUT_PREFIX + f"Canceled all floating toots")
 
 @plugin.interval(30)
 def check_notifications(bot: Sopel):
@@ -248,7 +257,7 @@ def check_notifications(bot: Sopel):
         client.notifications_clear()
 
 
-def print_toot(status, bot: Sopel, recipient):
+def print_toot(status, bot: Sopel | SopelWrapper, recipient):
     """Outputs a full status to IRC and adds it to the messageCache"""
     config: MastodonSection = bot.settings.mastodon
     messageCache = config.getMessageCache()
@@ -278,7 +287,7 @@ def toot(
     bot: SopelWrapper,
     post: str,
     sensitive: bool = False,
-    reply: str = None,
+    reply: str | None = None,
     visibility: str = "unlisted",
 ):
     """Helper function to send/reply to a toot.\\
@@ -287,22 +296,41 @@ def toot(
     config: MastodonSection = bot.settings.mastodon
     client = config.getMastodonClient()
     messageCache = config.getMessageCache()
+
+    def send_toot(**kwargs):
+        result = client.status_post(**kwargs)
+        LOGGER.debug(f"Toot Result: {result}")
+        key = tootEncoding(result)
+        messageCache[key] = result
+        bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] {result['url']}")
+
+    def post_status(**kwargs):
+        if config.delayed_tooting == True:
+            bot.notice(PLUGIN_OUTPUT_PREFIX + f"Toot Delayed. Cancel all unposted toots with .cancel")
+            evt = Event()
+            config.delayed_toots.append(evt)
+            def post_eventually(event : Event):
+                sleep(config.delay)
+                if not event.is_set():
+                    send_toot(**kwargs)
+                config.delayed_toots.remove(event)
+            thread = Thread(target=post_eventually,args=(evt,))
+            thread.run()
+        else:
+            send_toot(**kwargs)
+
     if reply is None:
         LOGGER.info(f"Tooting: {post}")
-        result = client.status_post(post, sensitive=sensitive, visibility=visibility)
+        post_status(status=post, sensitive=sensitive, visibility=visibility)
     else:
         if reply not in messageCache:
             bot.notice(PLUGIN_OUTPUT_PREFIX + f"Unknown reference to reply to: {reply}")
             return
         previous = messageCache[reply]
         LOGGER.info(f"Replying: {post} to: {previous['id']}")
-        result = client.status_reply(
-            previous, status=post, sensitive=sensitive, visibility=visibility
+        post_status(
+            in_reply_to_id=previous, status=post, sensitive=sensitive, visibility=visibility
         )
-    LOGGER.debug(f"Toot Result: {result}")
-    key = tootEncoding(result)
-    messageCache[key] = result
-    bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] {result['url']}")
 
 
 def tootEncoding(toot):
@@ -361,6 +389,9 @@ class MastodonSection(config.types.StaticSection):
         "messageCacheLimit", int, default=50
     )
     notification_channel = config.types.ValidatedAttribute("notification_channel", str)
+    delayed_tooting = config.types.ValidatedAttribute("delayed", bool, default=False)
+    delay = config.types.ValidatedAttribute("delay", int, default=360)
+    delayed_toots : list[Event] = list()
 
     mastodonClient: Mastodon
     messageCache: LimitedSizeDict
@@ -370,7 +401,7 @@ class MastodonSection(config.types.StaticSection):
         self.messageCache = LimitedSizeDict(
             size_limit=self.messageCacheLimit, botDB=bot.db, client=self.mastodonClient
         )
-        nc: str = self.notification_channel
+        nc = str(self.notification_channel)
         self.notification_channel = nc.strip('"')
 
     def getMastodonClient(self) -> Mastodon:
