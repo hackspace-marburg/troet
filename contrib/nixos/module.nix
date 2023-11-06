@@ -5,7 +5,7 @@ with lib;
 let
     troet = pkgs.python310.pkgs.buildPythonPackage {
       pname = "troet";
-      version = "0.0.1";
+      version = "20231106";
 
       src = lib.cleanSource ../../.;
 
@@ -25,7 +25,7 @@ let
 
     };
 
-    mySopelNew = pkgs.python310.withPackages (p: with p; [ sopel mastodon-py troet ]);
+    troetSopel = pkgs.python310.withPackages (p: with p; [ sopel mastodon-py troet ]);
 
     troet-uid = 9161;
 
@@ -97,6 +97,8 @@ let
       token = ${cfg.mastodon.token}
       base_url = ${cfg.mastodon.baseUrl}
       notification_channel = ${toString cfg.mastodon.notificationChannel}
+      delayed = ${toString cfg.mastodon.delayed}
+      delay = ${toString cfg.mastodon.delay}
     '';
 
     cfg = config.services.troet;
@@ -155,6 +157,16 @@ in {
       type = types.nullOr types.str;
     };
 
+    mastodon.delayed = mkOption {
+      default = false;
+      type = types.bool;
+    };
+
+    mastodon.delay = mkOption {
+      default = 360;
+      type = types.number;
+    };
+
   };
 
   config = mkIf cfg.enable {
@@ -166,7 +178,7 @@ in {
 
       serviceConfig = {
         ExecStart = ''
-          ${mySopelNew}/bin/sopel \
+          ${troetSopel}/bin/sopel \
             -c ${troetConfig}
         '';
 

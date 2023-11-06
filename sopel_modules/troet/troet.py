@@ -232,7 +232,7 @@ def cancel(bot: SopelWrapper, trigger: Trigger):
     config: MastodonSection = bot.settings.mastodon
     if config.delayed_tooting == True:
         [x.set() for x in config.delayed_toots]
-        bot.notice(PLUGIN_OUTPUT_PREFIX + "Canceled all floating toots")
+        bot.notice(PLUGIN_OUTPUT_PREFIX + "Cancelled all floating toots.")
     else:
         bot.notice(
             PLUGIN_OUTPUT_PREFIX + "Delayed tooting not enabled. This does nothing."
@@ -312,7 +312,7 @@ def toot(
         if config.delayed_tooting == True:
             bot.notice(
                 PLUGIN_OUTPUT_PREFIX
-                + f"Toot Delayed. Cancel all unposted toots with .cancel"
+                + f"Toot delayed. Cancel all unposted toots with .cancel"
             )
             evt = Event()
             config.delayed_toots.append(evt)
@@ -367,7 +367,7 @@ def setup(bot: Sopel):
         or section.base_url is None
     ):
         LOGGER.error(
-            "Mastodon plugin is missing necessary config values. Plugin will not work"
+            "Mastodon plugin is missing necessary config values. Plugin will not work."
         )
     section.initMastodon(bot)
     # TODO: verify credentials?
