@@ -66,6 +66,14 @@ Given the bot code of the toot it will try to delete the toot. Only works on too
 If given a permalink to a toot it will show this toot in IRC and assign a bot code to it. Afterwards the bot can be used to reply to it.
 In the Mastodon UI you can get the permalink of a toot by clicking on the timestamp. If it contains `/web/` it is **not** the permalink.
 
+``` .fav ```
+
+Favourite a toot using the ID received via `.search`. Undo by running the command again.
+
+``` .boost ```
+
+Boost a toot using the ID received via `.search`. Undo by running the command again.
+
 ``` .listedtoot .lt ```
 
 To prevent potential spam from the bot to be visible on the Mastodon instances public timeline all normal toots and replies are sent with visibility set to unlisted.
@@ -85,5 +93,3 @@ Stops all currently requsted but unposted toots (used in delayed mode)
 - At the moment this code painfully ignores any kind of ratelimiting
   - If the size of the messageCache is too big (i.e.: close to 300) this could be a problem while starting the bot
     - Toots need to be reloaded due to message structure cannot be json serialized easily (because of datetime types) (i.e. I am lazy and should work on a workaround)
-- Add Feature for sharing toots (Twitter "retweet" equivalent)
-

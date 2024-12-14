@@ -225,6 +225,29 @@ def fav(bot: SopelWrapper, trigger: Trigger):
     messageCache[key] = toot
 
 
+@plugin.command("boost")
+@plugin.require_chanmsg("Only available in Channel")
+def boost(bot: SopelWrapper, trigger: Trigger):
+    key = trigger.args[1].split(" ", 1)[1]
+    config: MastodonSection = bot.settings.mastodon
+    client = config.getMastodonClient()
+    messageCache = config.getMessageCache()
+    if key not in messageCache:
+        bot.notice(PLUGIN_OUTPUT_PREFIX + f"Unknown reference: {key}")
+        return
+    if not messageCache[key]["reblogged"]:
+        toot = client.status_reblog(messageCache[key]["id"])
+        bot.notice(
+            PLUGIN_OUTPUT_PREFIX + f"Boosted: [{key}] {messageCache[key]['url']}"
+        )
+    else:
+        toot = client.status_unreblog(messageCache[key]["id"])
+        bot.notice(
+            PLUGIN_OUTPUT_PREFIX + f"Unboosted: [{key}] {messageCache[key]['url']}"
+        )
+    messageCache[key] = toot
+
+
 @plugin.command("cancel")
 @plugin.require_chanmsg("Only available in Channel")
 @plugin.require_privilege(plugin.OP)
