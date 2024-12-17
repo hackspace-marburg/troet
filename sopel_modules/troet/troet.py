@@ -1,5 +1,6 @@
 from base64 import b64encode
 from time import sleep
+from typing import Callable
 
 from sopel import config, plugin
 from sopel.bot import Sopel, SopelWrapper
@@ -45,7 +46,7 @@ class LimitedSizeDict(OrderedDict):
                     if result["statuses"]:
                         OrderedDict.__setitem__(self, key, result["statuses"][0])
                 except MastodonAPIError as APIError:
-                    LOGGER.warn(f"API didn't like {key} - {value} - {APIError}")
+                    LOGGER.warning(f"API didn't like {key} - {value} - {APIError}")
 
             # Updates dict in case more keys were loaded
             # or old keys could not be loaded from mastodon
@@ -83,8 +84,8 @@ class MLStripper(HTMLParser):
         self.convert_charrefs = True
         self.text = StringIO()
 
-    def handle_data(self, d):
-        self.text.write(d)
+    def handle_data(self, data):
+        self.text.write(data)
 
     def get_data(self):
         return self.text.getvalue()
@@ -176,30 +177,13 @@ def search(bot: SopelWrapper, trigger: Trigger):
 @plugin.require_chanmsg("Only available in Channel")
 @plugin.command("mute", "m")
 def mute(bot: SopelWrapper, trigger: Trigger):
+    key = trigger.args[1].split(" ", 1)[1]
     config: MastodonSection = bot.settings.mastodon
     client = config.getMastodonClient()
-    parameter = trigger.args[1].split(" ", 1)[1]
     messageCache = config.getMessageCache()
-    key: str
-    if parameter in messageCache:
-        key = parameter
-        toot = messageCache[key]
-    else:
-        result = client.search_v2(parameter)
-        if not result["statuses"]:
-            bot.notice(PLUGIN_OUTPUT_PREFIX + "No status found. Nothing muted.")
-            return
-        toot = result["statuses"][0]
-        key = tootEncoding(toot)
-        messageCache[key] = toot
-    status = client.status_mute(toot)
-    if not status:
-        bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] No reply on request to mute.")
-        return
-    if status["muted"]:
-        bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] Muted.")
-    else:
-        bot.notice(PLUGIN_OUTPUT_PREFIX + f"[{key}] Failed to mute.")
+    toggle_status(
+        bot, messageCache, key, client.status_mute, client.status_unmute, "muted"
+    )
 
 
 @plugin.command("fav")
@@ -209,20 +193,14 @@ def fav(bot: SopelWrapper, trigger: Trigger):
     config: MastodonSection = bot.settings.mastodon
     client = config.getMastodonClient()
     messageCache = config.getMessageCache()
-    if key not in messageCache:
-        bot.notice(PLUGIN_OUTPUT_PREFIX + f"Unknown reference: {key}")
-        return
-    if not messageCache[key]["favourited"]:
-        toot = client.status_favourite(messageCache[key]["id"])
-        bot.notice(
-            PLUGIN_OUTPUT_PREFIX + f"Favourited: [{key}] {messageCache[key]['url']}"
-        )
-    else:
-        toot = client.status_unfavourite(messageCache[key]["id"])
-        bot.notice(
-            PLUGIN_OUTPUT_PREFIX + f"Unfavourited: [{key}] {messageCache[key]['url']}"
-        )
-    messageCache[key] = toot
+    toggle_status(
+        bot,
+        messageCache,
+        key,
+        client.status_favourite,
+        client.status_unfavourite,
+        "favourited",
+    )
 
 
 @plugin.command("boost")
@@ -232,18 +210,36 @@ def boost(bot: SopelWrapper, trigger: Trigger):
     config: MastodonSection = bot.settings.mastodon
     client = config.getMastodonClient()
     messageCache = config.getMessageCache()
+    toggle_status(
+        bot,
+        messageCache,
+        key,
+        client.status_reblog,
+        client.status_unreblog,
+        "reblogged",
+    )
+
+
+def toggle_status(
+    bot: SopelWrapper,
+    messageCache: LimitedSizeDict,
+    key: str,
+    enable: Callable,
+    disable: Callable,
+    criteria: str,
+):
     if key not in messageCache:
         bot.notice(PLUGIN_OUTPUT_PREFIX + f"Unknown reference: {key}")
         return
-    if not messageCache[key]["reblogged"]:
-        toot = client.status_reblog(messageCache[key]["id"])
+    if not messageCache[key][criteria]:
+        toot = enable(messageCache[key]["id"])
         bot.notice(
-            PLUGIN_OUTPUT_PREFIX + f"Boosted: [{key}] {messageCache[key]['url']}"
+            PLUGIN_OUTPUT_PREFIX + f"{criteria}: [{key}] {messageCache[key]['url']}"
         )
     else:
-        toot = client.status_unreblog(messageCache[key]["id"])
+        toot = disable(messageCache[key]["id"])
         bot.notice(
-            PLUGIN_OUTPUT_PREFIX + f"Unboosted: [{key}] {messageCache[key]['url']}"
+            PLUGIN_OUTPUT_PREFIX + f"un{criteria}: [{key}] {messageCache[key]['url']}"
         )
     messageCache[key] = toot
 
